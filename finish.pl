@@ -48,32 +48,32 @@ my ($query,$action);
 $query=new CGI;
 $action=$query->param("action");
 
-save_cookies();
 save_path();
 
-my ($ip,$tmpname);
+my $ip=$ENV{REMOTE_ADDR};
+my $oek_ip=$query->param("oek_ip");
+$oek_ip=$ip unless($oek_ip);
 
-$ip=$ENV{REMOTE_ADDR};
-$tmpname=TMP_DIR.$ip.'.png';
+die unless($oek_ip=~/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/);
+
+my $tmpname=TMP_DIR.$oek_ip.'.png';
 
 if(!$action)
 {
-	my ($oek_parent)=$query->cookie("oek_parent");
+	my $oek_parent=$query->param("oek_parent");
 
 	make_http_header();
-	print_page(\*STDOUT,$tmpname,$oek_parent);
+	print_page(\*STDOUT,$tmpname,$oek_parent,$oek_ip);
 }
 elsif($action eq "post")
 {
-	my ($parent,$name,$email,$subject,$comment,$password,$captcha);
-
-	$parent=$query->param("parent");
-	$name=$query->param("name");
-	$email=$query->param("email");
-	$subject=$query->param("subject");
-	$comment=$query->param("comment");
-	$password=$query->param("password");
-	$captcha=$query->param("captcha");
+	my $parent=$query->param("parent");
+	my $name=$query->param("name");
+	my $email=$query->param("email");
+	my $subject=$query->param("subject");
+	my $comment=$query->param("comment");
+	my $password=$query->param("password");
+	my $captcha=$query->param("captcha");
 
 	$name=clean_string($name);
 	$email=clean_string($email);
@@ -195,17 +195,6 @@ sub make_cookies()
 	print "Set-Cookie: $cookie\n";
 }
 
-sub save_cookies()
-{
-#	$c_name=$query->cookie("name");
-#	$c_email=$query->cookie("email");
-#	$c_password=$query->cookie("password");
-
-	$c_name="" unless($c_name);
-	$c_email="" unless($c_email);
-	$c_password=substr(crypt(substr(rand(),2),"pw"),-8) unless($c_password);
-}
-
 sub save_path()
 {
 	($self_path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;
@@ -224,9 +213,9 @@ sub expand_filename($)
 	return $self_path.$filename;
 }
 
-sub print_page($$$)
+sub print_page($$$$)
 {
-	my ($file,$tmpname,$oek_parent)=@_;
+	my ($file,$tmpname,$oek_parent,$oek_ip)=@_;
 
 	print $file '<html><head>';
 
@@ -236,6 +225,8 @@ sub print_page($$$)
 	print $file '<link rel="shortcut icon" href="'.expand_filename(FAVICON).'" />' if(FAVICON);
 	print $file '<script src="'.expand_filename(JS_FILE).'"></script>'; # could be better
 	print $file '</head><body>';
+
+	print $file S_HEAD;
 
 	print $file '<div class="adminbar">';
 	print $file '[<a href="'.expand_filename(HOME).'" target="_top">'.S_HOME.'</a>]';
@@ -252,6 +243,7 @@ sub print_page($$$)
 	print $file '<div class="postarea" align="center">';
 	print $file '<form name="postform" action="'.get_script_name().'" method="post" enctype="multipart/form-data">';
 	print $file '<input type="hidden" name="action" value="post" />';
+	print $file '<input type="hidden" name="oek_ip" value="'.$oek_ip.'" />';
 	print $file '<table><tbody>';
 	print $file '<tr><td class="postblock" align="left">'.S_NAME.'</td><td align="left"><input type="text" name="name" size="28" /></td></tr>';
 	print $file '<tr><td class="postblock" align="left">'.S_EMAIL.'</td><td align="left"><input type="text" name="email" size="28" /></td></tr>';
@@ -285,6 +277,7 @@ sub print_page($$$)
 
 	print $file '<div align="center"><img src="'.expand_filename($tmpname).'"></div>';
 
-	print $file '<hr /><div class="footer">'.S_FOOT.'</div>';
+	print $file '<hr />';
+	print $file S_FOOT;
 	print $file '</body></html>';
 }

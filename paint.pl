@@ -13,65 +13,90 @@ BEGIN { require 'oekaki_strings_e.pl'; }
 
 
 
-my ($c_password,$c_name,$c_email);
-my ($self_path);
-
 my $query=new CGI;
 
 my $oek_painter=$query->param("oek_painter");
 my $oek_x=$query->param("oek_x");
 my $oek_y=$query->param("oek_y");
 my $oek_parent=$query->param("oek_parent");
+my $oek_src=$query->param("oek_src");
+my $ip=$ENV{REMOTE_ADDR};
 
-my $mode;
+make_error(S_HAXORING) if($oek_x=~/[^0-9]/ or $oek_y=~/[^0-9]/ or $oek_parent=~/[^0-9]/);
+make_error(S_HAXORING) if($oek_src and !OEKAKI_ENABLE_MODIFY);
+make_error(S_HAXORING) if($oek_src=~m![^0-9a-zA-Z/\.]!);
+make_error(S_OEKTOOBIG) if($oek_x>OEKAKI_MAX_X or $oek_y>OEKAKI_MAX_Y);
+make_error(S_OEKTOOSMALL) if($oek_x<OEKAKI_MIN_X or $oek_y<OEKAKI_MIN_Y);
 
-if ($oek_x > OEKAKI_MAX_X || $oek_y > OEKAKI_MAX_Y) 
+if($oek_painter=~/shii/)
 {
-	make_error(S_OEKTOOBIG);
-}
+	my $mode;
+	$mode="pro" if($oek_painter=~/pro/);
 
-if ($oek_x < OEKAKI_MIN_X || $oek_y < OEKAKI_MIN_Y) 
-{
-	die S_OEKTOOSMALL;
-}
+	if($oek_painter=~/selfy/) { print <<HTML_SELFY;
+Content-Type: text/html; charset=Shift_JIS
 
-if ($oek_painter eq "shii_norm")
-{
-	$mode = "";
-}
-elsif ($oek_painter eq "shii_pro")
-{ 
-	$mode = "pro";
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="oekaki.css">
+</head>
+<body>
+<script type="text/javascript" src="palette_selfy.js"></script>
+
+<table class="nospace" width="100%" height="100%"><tbody><tr>
+<td width="100%">
+<applet code="c.ShiPainter.class" name="paintbbs" archive="spainter_all.jar" width="100%" height="100%">
+<param name="image_width" value="$oek_x" />
+<param name="image_height" value="$oek_y" />
+<param name="image_canvas" value="$oek_src" />
+<param name="dir_resource" value="./" />
+<param name="tt.zip" value="tt_def.zip" />
+<param name="res.zip" value="res.zip" />
+<param name="tools" value="$mode" />
+<param name="layer_count" value="3" />
+<param name="url_save" value="getpic.pl" />
+<param name="url_exit" value="finish.pl?oek_parent=$oek_parent&oek_ip=$ip" />
+<param name="send_header" value="$ip" />
+</applet>
+</td>
+<td valign="top">
+<script>palette_selfy();</script>
+</td>
+</tr></tbody></table>
+</body>
+</html>
+HTML_SELFY
+	} else { print <<HTML_NORM;
+Content-Type: text/html
+
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="oekaki.css">
+</head>
+<body>
+<applet code="c.ShiPainter.class" name="paintbbs" archive="spainter_all.jar" width="100%" height="100%">
+<param name="image_width" value="$oek_x" />
+<param name="image_height" value="$oek_y" />
+<param name="image_canvas" value="$oek_src" />
+<param name="dir_resource" value="./" />
+<param name="tt.zip" value="tt_def.zip" />
+<param name="res.zip" value="res.zip" />
+<param name="tools" value="$mode" />
+<param name="layer_count" value="3" />
+<param name="url_save" value="getpic.pl" />
+<param name="url_exit" value="finish.pl?oek_parent=$oek_parent&oek_ip=$ip" />
+<param name="send_header" value="$ip" />
+</applet>
+</body>
+</html>
+HTML_NORM
+	}
 }
 else
 {
 	make_error(S_OEKUNKNOWN);
 }
 
-my $cookie=$query->cookie(-name=>'oek_parent',
-                       -value=>$oek_parent?$oek_parent:'',
-                       -expires=>'+14d');
-
-print <<HTML;
-Set-Cookie: $cookie
-Content-Type: text/html
-
-<html>
-<body>
-<applet code="c.ShiPainter.class" name="paintbbs" archive="spainter_all.jar" width="100%" height="100%">
-<param name="image_width" value="$oek_x">
-<param name="image_height" value="$oek_y">
-<param name="dir_resource" value="./">
-<param name="tt.zip" value="tt_def.zip">
-<param name="res.zip" value="res.zip">
-<param name="tools" value="$mode">
-<param name="layer_count" value="3">
-<param name="url_save" value="getpic.pl">
-<param name="url_exit" value="finish.pl">
-</applet>
-</body>
-</html>
-HTML
 
 
 

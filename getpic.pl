@@ -7,10 +7,15 @@ use strict;
 use lib '.';
 BEGIN { require 'oekaki_config.pl'; }
 
-my $ip=$ENV{REMOTE_ADDR};
-my $tmpname=TMP_DIR.$ip.'.png';
+my $metadata=<STDIN>;
+my $oek_ip;
 
-my $metadata=<STDIN>; # not actually used - feel free to implement.
+if($metadata=~/^S[0-9]{8}(.*)[0-9]{8}$/) { $oek_ip=$1; }
+else { $oek_ip=$ENV{REMOTE_ADDR}; }
+
+die unless($oek_ip=~/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/);
+
+my $tmpname=TMP_DIR.$oek_ip.'.png';
 
 open FILE,">$tmpname" or die("Couldn't write to directory");
 
