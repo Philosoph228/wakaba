@@ -311,6 +311,7 @@ sub print_page_header($)
 	print $file '<html><head>';
 
 	print $file '<title>'.TITLE.'</title>';
+	print $file '<meta http-equiv="Content-Type"  content="text/html;charset='.CHARSET.'" />' if(CHARSET);
 	print $file '<link rel="stylesheet" type="text/css" href="'.expand_filename(CSS_FILE).'" title="Standard stylesheet" />';
 	print $file '<link rel="shortcut icon" href="'.expand_filename(FAVICON).'" />' if(FAVICON);
 	print $file '<script src="'.expand_filename(JS_FILE).'"></script>'; # could be better
@@ -490,7 +491,9 @@ sub print_comment_header($$$$)
 sub print_image($$)
 {
 	my ($file,$res)=@_;
-	my ($imagename)=$$res{image}=~/([0-9]+\.\w+)$/;
+#	my ($imagename)=$$res{image}=~/([0-9]+\.\w+)$/;
+ 	$$res{image}=~m!([^/]+)$!;
+ 	my ($imagename)=$1;
 
 	print $file '<span class="filesize">'.S_PICNAME.'<a target="_blank" href="'.expand_filename($$res{image}).'">'.$imagename.'</a>';
 	print $file '-('.$$res{size}.' B, '.$$res{width}.'x'.$$res{height}.')</span>';
