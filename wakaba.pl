@@ -16,7 +16,7 @@ use lib '.';
 BEGIN { require "config.pl"; }
 BEGIN { require "config_defaults.pl"; }
 BEGIN { require "strings_e.pl"; }
-BEGIN { require "futaba_style.pl"; }
+BEGIN { require "wakaba_style.pl"; }
 BEGIN { require "filetypes_none.pl"; }
 
 my %filetypes=%filetypes::filetypes;
@@ -1379,6 +1379,32 @@ sub get_page_links($)
 sub get_page_count()
 {
 	return int((count_threads()+IMAGES_PER_PAGE-1)/IMAGES_PER_PAGE);
+}
+
+sub get_stylesheets()
+{
+	my $found=0;
+	my @stylesheets=map
+	{
+		my %sheet;
+
+		$sheet{filename}=$_;
+
+		($sheet{title})=m!([^/]+)\.css$!i;
+		$sheet{title}=ucfirst $sheet{title};
+		$sheet{title}=~s/_/ /g;
+		$sheet{title}=~s/ ([a-z])/ \u$1/g;
+		$sheet{title}=~s/([a-z])([A-Z])/$1 $2/g;
+
+		if($sheet{title} eq DEFAULT_STYLE) { $sheet{default}=1; $found=1; }
+		else { $sheet{default}=0; }
+
+		\%sheet;
+	} glob(CSS_DIR."*.css");
+
+	$stylesheets[0]{default}=1 if(@stylesheets and !$found);
+
+	return @stylesheets;
 }
 
 sub expand_filename($)
